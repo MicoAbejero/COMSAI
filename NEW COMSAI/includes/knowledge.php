@@ -2,10 +2,24 @@
 
 declare(strict_types=1);
 
-function chat_sources(PDO $pdo, string $question): array
+function chat_sources(PDO $pdo, string $question, ?int $categoryId = null): array
 {
+    if ($categoryId !== null) {
+        $categorySources = $pdo->prepare(
+            "SELECT title, content, source_title, source_url, 'Knowledge base' AS kind
+             FROM knowledge_base
+             WHERE category_id = :category AND status = 'published'
+               AND (effective_date IS NULL OR effective_date <= CURDATE())
+               AND (expiration_date IS NULL OR expiration_date >= CURDATE())
+               AND source_title IS NOT NULL AND source_title <> ''
+             ORDER BY updated_at DESC LIMIT 8"
+        );
+        $categorySources->execute(['category' => $categoryId]);
+        return $categorySources->fetchAll();
+    }
+
     $words = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($question), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-    $ignored = ['what','when','where','which','who','how','does','about','tell','please','could','would','should','from','with','that','this','have','there','their','your','into','for','the','and','are','can','you','is','of','in','to','a','an','on','do','my'];
+    $ignored = ['what','when','where','which','who','how','does','about','tell','please','could','would','should','from','with','that','this','have','there','their','your','into','for','the','and','are','can','you','is','of','in','to','a','an','on','do','my','ccs'];
     $terms = array_values(array_unique(array_filter($words, static fn (string $word): bool => mb_strlen($word) >= 3 && !in_array($word, $ignored, true))));
     $terms = array_slice($terms, 0, 6);
     if ($terms === []) return [];
@@ -17,7 +31,7 @@ function chat_sources(PDO $pdo, string $question): array
         $params['title' . $index] = '%' . $term . '%';
         $params['content' . $index] = '%' . $term . '%';
     }
-    $where = implode(' OR ', $conditions);
+    $where = implode(' AND ', $conditions);
     $statement = $pdo->prepare(
         "SELECT title, content, source_title, source_url, 'Knowledge base' AS kind
          FROM knowledge_base
@@ -36,7 +50,7 @@ function chat_sources(PDO $pdo, string $question): array
         $announcementParams['title' . $index] = '%' . $term . '%';
         $announcementParams['content' . $index] = '%' . $term . '%';
     }
-    $announcementWhere = implode(' OR ', $announcementConditions);
+    $announcementWhere = implode(' AND ', $announcementConditions);
     $announcementQuery = $pdo->prepare(
         "SELECT title, content, 'Official announcement' AS source_title, source_url, 'Announcement' AS kind
          FROM announcements

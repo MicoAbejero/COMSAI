@@ -102,10 +102,20 @@ try {
         $chatId = (int) $pdo->lastInsertId();
     }
     $pdo->prepare('UPDATE chat_sessions SET last_activity_at = NOW() WHERE id = :id')->execute(['id' => $chatId]);
-    $sources = chat_sources($pdo, $question);
+    $categoryId = filter_var($input['category_id'] ?? null, FILTER_VALIDATE_INT);
+    if ($categoryId === false || $categoryId === null || $categoryId < 1) {
+        $categoryId = null;
+    } else {
+        $categoryCheck = $pdo->prepare('SELECT COUNT(*) FROM categories WHERE id = :id');
+        $categoryCheck->execute(['id' => $categoryId]);
+        if (!(int) $categoryCheck->fetchColumn()) $categoryId = null;
+    }
+    $sources = chat_sources($pdo, $question, $categoryId);
     $aiGenerated = false;
     if ($sources === []) {
-        $answer = "I'm sorry, but I couldn't find sufficient verified information about that in the COMSAI knowledge base. Please check the official CCS communication channels or contact the appropriate CCS personnel.";
+        $answer = $categoryId !== null
+            ? 'There is no published information in this category yet. Please check back later or ask about another topic.'
+            : "I'm sorry, but I couldn't find sufficient verified information about that in the COMSAI knowledge base. Please check the official CCS communication channels or contact the appropriate CCS personnel.";
     } else {
         $answer = chat_openai_answer($question, $sources);
         $aiGenerated = $answer !== null;

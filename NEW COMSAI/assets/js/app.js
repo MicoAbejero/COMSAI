@@ -65,7 +65,7 @@
     scrollToBottom();
   };
 
-  const send = async (question) => {
+  const send = async (question, categoryId = null) => {
     const message = question.trim();
     if (!message || busy || message.length > 1000) return;
     busy = true;
@@ -84,7 +84,7 @@
       const response = await fetch("api/chat.php", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
-        body: JSON.stringify({ action: "message", question: message }),
+        body: JSON.stringify({ action: "message", question: message, category_id: categoryId }),
       });
       const payload = await response.json();
       typing.remove();
@@ -125,7 +125,7 @@
   document
     .querySelectorAll("[data-question]")
     .forEach((button) =>
-      button.addEventListener("click", () => send(button.dataset.question)),
+      button.addEventListener("click", () => send(button.dataset.question, button.dataset.categoryId || null)),
     );
   document.querySelector("#new-chat").addEventListener("click", async () => {
     if (busy) return;
@@ -144,18 +144,27 @@
       showError("Could not start a new chat. Please refresh the page.");
     }
   });
-  historyReady = fetch("api/chat.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
-    body: JSON.stringify({ action: "history" }),
-  })
-    .then((response) => response.ok ? response.json() : null)
-    .then((payload) => {
-      if (payload?.ok) payload.messages.forEach((message) => addMessage(
-        message.sender === "student" ? "student" : "assistant",
-        message.message,
-        message.sources || [],
-      ));
-    })
-    .catch(() => {});
+  historyReady = (async () => {
+    const headers = { "Content-Type": "application/json", "X-CSRF-Token": csrf };
+    if (new URLSearchParams(location.search).has("new_chat")) {
+      const clearResponse = await fetch("api/chat.php", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "clear" }),
+      });
+      if (!clearResponse.ok) throw new Error("Could not start a new chat.");
+      history.replaceState(null, "", `${location.pathname}${location.hash}`);
+    }
+    const response = await fetch("api/chat.php", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ action: "history" }),
+    });
+    const payload = response.ok ? await response.json() : null;
+    if (payload?.ok) payload.messages.forEach((message) => addMessage(
+      message.sender === "student" ? "student" : "assistant",
+      message.message,
+      message.sources || [],
+    ));
+  })().catch(() => {});
 })();

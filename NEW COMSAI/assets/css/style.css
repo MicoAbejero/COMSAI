@@ -51,12 +51,10 @@ a {
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: var(--violet-soft);
-  color: var(--violet);
-  font: 800 22px var(--font-display);
-  border: 1px solid #e9ddff;
+  display: block;
+  object-fit: cover;
+  border: 1px solid rgb(16 24 40 / 12%);
+  box-shadow: 0 3px 8px rgb(16 24 40 / 10%);
 }
 .brand strong {
   font: 800 18px var(--font-display);
@@ -145,6 +143,9 @@ textarea:focus-visible {
   border: 1px solid rgb(229 231 235 / 82%);
   border-radius: 16px;
   box-shadow: 0 12px 34px rgb(16 24 40 / 6%), 0 2px 7px rgb(16 24 40 / 3%);
+}
+.chat-panel {
+  box-shadow: 0 16px 38px rgb(16 24 40 / 12%), 0 4px 12px rgb(16 24 40 / 7%), inset 0 1px 0 #fff;
 }
 .side-panel {
   padding: 19px 17px 16px;
@@ -265,7 +266,7 @@ textarea:focus-visible {
 .topic-button {
   width: 100%;
   border: 0;
-  background: transparent;
+  background: rgb(255 255 255 / 5%);
   text-align: left;
   min-height: 48px;
   border-radius: 8px;
@@ -275,11 +276,13 @@ textarea:focus-visible {
   align-items: center;
   gap: 10px;
   font-size: 15px;
-  transition: background 0.15s ease, color 0.15s ease;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 10%), inset 0 1px 0 rgb(255 255 255 / 8%);
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 .topic-button:hover {
   background: rgb(255 255 255 / 12%);
   color: #fff;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 16%), inset 0 1px 0 rgb(255 255 255 / 12%);
 }
 .topic-dot {
   flex: 0 0 7px;
@@ -420,13 +423,13 @@ textarea:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  box-shadow: 0 2px 5px rgb(16 24 40 / 3%);
+  box-shadow: 0 5px 14px rgb(16 24 40 / 8%), 0 1px 3px rgb(16 24 40 / 6%), inset 0 1px 0 #fff;
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 .suggestions button:hover {
   border-color: #86efac;
   background: #fbfffc;
-  box-shadow: 0 6px 16px rgb(16 24 40 / 7%);
+  box-shadow: 0 8px 18px rgb(16 24 40 / 12%), 0 2px 5px rgb(16 24 40 / 7%), inset 0 1px 0 #fff;
   transform: translateY(-1px);
 }
 .suggestions button span {
@@ -479,6 +482,7 @@ textarea:focus-visible {
   background: #f8fafc;
   color: #344054;
   font-size: 17px;
+  box-shadow: 0 4px 12px rgb(16 24 40 / 7%), inset 0 1px 0 rgb(255 255 255 / 85%);
 }
 .message.student .message-body {
   background: var(--green-soft);
@@ -503,6 +507,7 @@ textarea:focus-visible {
   padding: 4px 8px;
   font-size: 14px;
   text-decoration: none;
+  box-shadow: 0 2px 5px rgb(16 24 40 / 8%), inset 0 1px 0 rgb(255 255 255 / 75%);
 }
 .source-link:hover {
   text-decoration: underline;

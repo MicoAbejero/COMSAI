@@ -60,6 +60,9 @@ This project contains one explicitly fictional, unpublished sample entry. Replac
 
 For a database created from an earlier copy of this new project schema (before chat citations were added), import `database/migrations/001_chat_message_sources.sql` once in phpMyAdmin. Do not run that one-time migration after importing the current full schema because the column already exists.
 
+To add the user-provided CCS Central Council officer roster to an existing database, import `database/migrations/002_ccs_council_officers.sql` once in phpMyAdmin. A fresh database created from the current full schema already includes it. The roster is saved as a draft in **CCS Council Officers** for administrator review before publication.
+
+
 ## Remaining prerequisites
 
 Real CCS knowledge sources, school-approved operational policies, optional OpenAI credentials, and institutional approval for student-data handling are not bundled or invented.

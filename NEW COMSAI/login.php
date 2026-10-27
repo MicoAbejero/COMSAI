@@ -41,7 +41,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 }
 ?><!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Administrator sign in | COMSAI</title><link rel="stylesheet" href="assets/css/admin.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Administrator sign in | COMSAI</title><link rel="stylesheet" href="assets/css/admin.css?v=20261017-2"></head>
 <body class="login-page"><main class="login-card"><a class="admin-brand" href="./"><span class="admin-mark">C</span><span><strong>COMSAI</strong><small>Private staff workspace</small></span></a><p class="eyebrow">CONTENT MANAGEMENT</p><h1>Administrator sign in</h1><p class="subtle">Sign in to manage verified CCS information.</p>
 <?php if ($error !== ''): ?><div class="alert" role="alert"><?= h($error) ?></div><?php endif; ?>
 <form method="post" action="login.php" novalidate><input type="hidden" name="_csrf" value="<?= h(csrf_token()) ?>"><label for="email">Email address</label><input id="email" name="email" type="email" maxlength="190" autocomplete="username" required autofocus><label for="password">Password</label><div class="password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" required><button type="button" class="toggle-password" aria-label="Show password">Show</button></div><button class="primary-button full-width" type="submit">Sign in</button></form>
