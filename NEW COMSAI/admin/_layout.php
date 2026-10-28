@@ -27,7 +27,7 @@ function admin_layout_start(string $title, string $active): array
 
 function admin_layout_end(): void
 {
-    ?></main></div><script src="../assets/js/admin.js?v=20261026-1" defer></script></body></html><?php
+    ?></main></div><script src="../assets/js/admin.js?v=20261027-4" defer></script></body></html><?php
 }
 
 function admin_log(PDO $pdo, int $adminId, string $action, string $entity, ?int $entityId = null): void

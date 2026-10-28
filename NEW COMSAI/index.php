@@ -9,7 +9,7 @@ $categories = [];
 $databaseReady = false;
 try {
     $pdo = db();
-    $categories = $pdo->query('SELECT id, name FROM categories ORDER BY id')->fetchAll();
+    $categories = $pdo->query('SELECT id, name FROM categories ORDER BY name')->fetchAll();
     $databaseReady = true;
 } catch (Throwable $error) {
     error_log('NEW COMSAI homepage database check failed: ' . $error->getMessage());
