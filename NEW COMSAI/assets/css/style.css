@@ -50,7 +50,7 @@ a {
 .brand-mark {
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: 0;
   display: block;
   object-fit: cover;
   border: 1px solid rgb(16 24 40 / 12%);
@@ -451,11 +451,37 @@ textarea:focus-visible {
 }
 .message-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   color: #667085;
   font-size: 14px;
   margin-bottom: 5px;
+}
+.message-meta time {
+  margin-left: auto;
+}
+.message-mode {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.message-mode.mode-general,
+.message-mode.mode-unverified {
+  background: #fff3db;
+  color: #80530a;
+}
+.message-mode.mode-grounded {
+  background: #e9e6fb;
+  color: #5638a5;
+}
+.message-mode.mode-announcement {
+  background: #e7f3ed;
+  color: #245a40;
 }
 .message-badge {
   width: 23px;
@@ -479,10 +505,55 @@ textarea:focus-visible {
   overflow-wrap: anywhere;
   padding: 15px 18px;
   border-radius: 4px 14px 14px 14px;
-  background: #f8fafc;
+  background: var(--violet-soft);
   color: #344054;
   font-size: 17px;
   box-shadow: 0 4px 12px rgb(16 24 40 / 7%), inset 0 1px 0 rgb(255 255 255 / 85%);
+}
+.message.assistant .message-body {
+  border-left: 2px solid var(--violet);
+}
+.message-body p {
+  margin: 0 0 9px;
+}
+.message-body p:last-child {
+  margin-bottom: 0;
+}
+.message-body h3 {
+  margin: 14px 0 9px;
+  color: #243447;
+  font-size: 1em;
+}
+.message-body h3.source-title {
+  margin: 18px 0 5px;
+}
+.message-body > h3:first-child {
+  margin-top: 0;
+}
+.message-body ul,
+.message-body ol {
+  margin: 7px 0 12px;
+  padding-left: 24px;
+}
+.message-body li + li {
+  margin-top: 8px;
+}
+.message-body ol + p,
+.message-body p + ol,
+.message-body ol + ol,
+.message-body ul + p,
+.message-body p + ul {
+  margin-top: 9px;
+}
+.message-body li p {
+  margin: 5px 0 0;
+  font-size: 0.94em;
+}
+.answer-link {
+  color: #5d3ab2;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
 }
 .message.student .message-body {
   background: var(--green-soft);
@@ -592,6 +663,27 @@ textarea:focus-visible {
   background: #fef3f2;
   border-radius: 10px;
   padding: 10px;
+}
+.quota-notice {
+  color: #7a2e0e;
+  font-size: 15px;
+  background: #fffaeb;
+  border: 1px solid #fedf89;
+  border-radius: 10px;
+  padding: 10px;
+}
+.maintenance-notice {
+  margin: 18px;
+  padding: 16px 18px;
+  color: #7a2e0e;
+  background: #fffaeb;
+  border: 1px solid #fedf89;
+  border-radius: 12px;
+  line-height: 1.55;
+}
+.maintenance-notice strong {
+  display: block;
+  margin-bottom: 4px;
 }
 .sr-only {
   position: absolute;

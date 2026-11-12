@@ -7,12 +7,123 @@
   const count = document.querySelector("#char-count");
   const csrf = document.querySelector('meta[name="csrf-token"]').content;
   let busy = false;
+  let maintenanceMode = false;
   let historyReady = Promise.resolve();
 
   const scrollToBottom = () => {
     list.scrollTop = list.scrollHeight;
   };
-  const addMessage = (sender, text, sources = []) => {
+  const appendLinkedText = (parent, text) => {
+    const expression = /\*\*[^*\n]+\*\*|__[^_\n]+__|https?:\/\/[^\s<>"']+/gi;
+    let cursor = 0;
+    for (const match of text.matchAll(expression)) {
+      const rawUrl = match[0];
+      if (match.index > cursor) parent.append(document.createTextNode(text.slice(cursor, match.index)));
+      if ((rawUrl.startsWith("**") && rawUrl.endsWith("**")) || (rawUrl.startsWith("__") && rawUrl.endsWith("__"))) {
+        const strong = document.createElement("strong");
+        appendLinkedText(strong, rawUrl.slice(2, -2));
+        parent.append(strong);
+        cursor = match.index + rawUrl.length;
+        continue;
+      }
+      const url = rawUrl.replace(/[.,;!?)}\]]+$/g, "");
+      const trailing = rawUrl.slice(url.length);
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+          const link = document.createElement("a");
+          link.href = parsed.href;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.className = "answer-link";
+          link.textContent = url;
+          parent.append(link, document.createTextNode(trailing));
+        } else {
+          parent.append(document.createTextNode(rawUrl));
+        }
+      } catch {
+        parent.append(document.createTextNode(rawUrl));
+      }
+      cursor = match.index + rawUrl.length;
+    }
+    if (cursor < text.length) parent.append(document.createTextNode(text.slice(cursor)));
+  };
+  const renderAnswer = (body, text) => {
+    let listNode = null;
+    let listKind = "";
+    let lastOrderedNumber = 0;
+    let lastListItem = null;
+    String(text).replace(/^\s*Best matching knowledge-base result \(not AI-generated\):\s*/i, '').split(/\r?\n/).forEach((line) => {
+      if (!line.trim()) {
+        return;
+      }
+      const sourceTitle = line.match(/^\s*\*\*([^*\n]+)\*\*\s*$/);
+      if (sourceTitle) {
+        listNode = null;
+        listKind = "";
+        lastOrderedNumber = 0;
+        lastListItem = null;
+        const element = document.createElement("h3");
+        element.className = "source-title";
+        appendLinkedText(element, sourceTitle[1]);
+        body.append(element);
+        return;
+      }
+      const heading = line.match(/^#{1,3}\s+(.+)$/) || line.match(/^\s*([A-Z][^.!?]{0,57}:)\s*$/);
+      if (heading) {
+        listNode = null;
+        listKind = "";
+        lastOrderedNumber = 0;
+        lastListItem = null;
+        const element = document.createElement("h3");
+        appendLinkedText(element, heading[1]);
+        body.append(element);
+        return;
+      }
+      const item = line.match(/^\s*(?:[-*]\s+|(\d+)\.\s+)(.+)$/);
+      if (item) {
+        const kind = item[1] ? "ol" : "ul";
+        if (!listNode || listKind !== kind) {
+          listNode = document.createElement(kind);
+          listKind = kind;
+          body.append(listNode);
+        }
+        const entry = document.createElement("li");
+        if (kind === "ol" && item[1]) {
+          const requestedNumber = Number(item[1]);
+          const displayNumber = requestedNumber <= lastOrderedNumber ? lastOrderedNumber + 1 : requestedNumber;
+          entry.value = displayNumber;
+          lastOrderedNumber = displayNumber;
+        }
+        appendLinkedText(entry, item[2]);
+        listNode.append(entry);
+        lastListItem = entry;
+        return;
+      }
+      if (lastListItem && /^(Position|Qualifications|Education(?: and qualifications)?|MC Portal projects):/i.test(line.trim())) {
+        const detail = document.createElement("p");
+        appendLinkedText(detail, line);
+        lastListItem.append(detail);
+        return;
+      }
+      listNode = null;
+      listKind = "";
+      lastListItem = null;
+      const paragraph = document.createElement("p");
+      appendLinkedText(paragraph, line);
+      body.append(paragraph);
+    });
+  };
+  const answerModeLabel = (mode) => ({
+    greeting: ["Greeting", "mode-general"],
+    "ai-general": ["General AI - not verified CCS information", "mode-general"],
+    ai: ["AI answer - based on CCS sources", "mode-grounded"],
+    "knowledge-base": ["Knowledge base answer", "mode-grounded"],
+    announcement: ["Published announcement", "mode-announcement"],
+    unverified: ["No verified CCS match", "mode-unverified"],
+    "legacy-sourced": ["References saved", "mode-grounded"],
+  })[mode] || null;
+  const addMessage = (sender, text, sources = [], mode = "") => {
     welcome?.remove();
     const article = document.createElement("article");
     article.className = `message ${sender}`;
@@ -29,20 +140,33 @@
       hour: "numeric",
       minute: "2-digit",
     }).format(new Date());
-    meta.append(badge, label, time);
+    meta.append(badge, label);
+    const modeInfo = sender === "assistant" ? answerModeLabel(mode) : null;
+    if (modeInfo) {
+      const modeBadge = document.createElement("span");
+      modeBadge.className = `message-mode ${modeInfo[1]}`;
+      modeBadge.textContent = modeInfo[0];
+      meta.append(modeBadge);
+    }
+    meta.append(time);
     const body = document.createElement("div");
     body.className = "message-body";
-    body.textContent = text;
+    renderAnswer(body, text);
     article.append(meta, body);
     if (sources.length) {
       const sourceRow = document.createElement("div");
       sourceRow.className = "sources";
+      const seenSourceTitles = new Set();
       sources.forEach((source) => {
+        const sourceTitle = String(source.title || "").trim();
+        const sourceKey = sourceTitle.toLocaleLowerCase();
+        if (!sourceTitle || seenSourceTitles.has(sourceKey)) return;
+        seenSourceTitles.add(sourceKey);
         const item = source.url
           ? document.createElement("a")
           : document.createElement("span");
         item.className = source.url ? "source-link" : "source-label";
-        item.textContent = source.title;
+        item.textContent = sourceTitle;
         if (source.url) {
           item.href = source.url;
           item.target = "_blank";
@@ -65,6 +189,29 @@
     scrollToBottom();
   };
 
+  const showQuotaNotice = (text) => {
+    const note = document.createElement("div");
+    note.className = "quota-notice";
+    note.setAttribute("role", "status");
+    note.textContent = text;
+    list.append(note);
+    scrollToBottom();
+  };
+
+  const showMaintenanceNotice = (text) => {
+    maintenanceMode = true;
+    input.disabled = true;
+    sendButton.disabled = true;
+    document.querySelector('#new-chat')?.setAttribute('disabled', '');
+    document.querySelectorAll('[data-question]').forEach((button) => { button.disabled = true; });
+    const note = document.createElement('div');
+    note.className = 'maintenance-notice';
+    note.setAttribute('role', 'status');
+    note.textContent = text;
+    list.append(note);
+    scrollToBottom();
+  };
+
   const send = async (question, categoryId = null) => {
     const message = question.trim();
     if (!message || busy || message.length > 1000) return;
@@ -76,7 +223,7 @@
     addMessage("student", message);
     const typing = document.createElement("div");
     typing.className = "typing";
-    typing.textContent = "COMSAI is checking verified sources";
+    typing.textContent = "COMSAI is thinking";
     typing.setAttribute("role", "status");
     list.append(typing);
     sendButton.disabled = true;
@@ -88,12 +235,24 @@
       });
       const payload = await response.json();
       typing.remove();
+      if (payload.code === "maintenance") {
+        showMaintenanceNotice(payload.error || "COMSAI is under maintenance. Please check back later.");
+        return;
+      }
+      if (payload.code === "daily_student_limit") {
+        showQuotaNotice(payload.error || "COMSAI is unavailable for new students today. Please come back tomorrow.");
+        return;
+      }
       if (!response.ok || !payload.ok)
         throw new Error(
           payload.error ||
             "The assistant could not answer right now. Please try again.",
         );
-      addMessage("assistant", payload.answer, payload.sources || []);
+      if (Array.isArray(payload.messages)) {
+        payload.messages.forEach((message) => addMessage("assistant", message.answer, message.sources || [], payload.mode || ""));
+      } else {
+        addMessage("assistant", payload.answer, payload.sources || [], payload.mode || "");
+      }
     } catch (error) {
       typing.remove();
       showError(
@@ -102,8 +261,8 @@
       );
     } finally {
       busy = false;
-      sendButton.disabled = false;
-      input.focus();
+      sendButton.disabled = maintenanceMode;
+      if (!maintenanceMode) input.focus();
     }
   };
 
@@ -135,7 +294,14 @@
         headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
         body: JSON.stringify({ action: "clear" }),
       });
-      if (!response.ok) throw new Error();
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        if (payload?.code === "maintenance") {
+          showMaintenanceNotice(payload.error || "COMSAI is under maintenance. Please check back later.");
+          return;
+        }
+        throw new Error();
+      }
       list.replaceChildren();
       const fresh = welcome?.cloneNode(true);
       if (fresh) list.append(fresh);
@@ -165,6 +331,7 @@
       message.sender === "student" ? "student" : "assistant",
       message.message,
       message.sources || [],
+      message.response_mode || "",
     ));
   })().catch(() => {});
 })();
